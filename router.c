@@ -24,7 +24,7 @@ int count0, count1, count2, count3, count4, count5;
 int hb_array[1000][5];
 int impact_array[1000][5];
 int opt;
-int master_socket, addrlen, new_socket, client_socket[7], max_clients, clients, player_check[7], activity, i, valread, sd, coach;
+int master_socket, addrlen, new_socket, client_socket[7], max_clients, clients, player_check[7], activity, i, valread, sd, base;
 int max_sd;
 struct sockaddr_in address;
 char buffer[1025];  //data buffer of 1K
@@ -148,22 +148,22 @@ int socket_in_out(int i){
             send(sd , buffer , strlen(buffer) , 0 );
             q--;
             if(q=0){
-            send(coach, buffer, strlen(buffer), 0);
+            send(base, buffer, strlen(buffer), 0);
             }
         }
         //Check if the socket is a player
-        else if(strcmp(buffer, "player") == 0)
+        else if(strcmp(buffer, "soldier") == 0)
         {
-            strcpy(buffer, "ack player\0");
+            strcpy(buffer, "ack soldier\0");
             player_check[i] = 1;                    //track player sockets
             send(sd, buffer, strlen(buffer), 0 );
             q++;
         }
         //Check if the socket is a coach
-        else if(strcmp(buffer, "coach") == 0)
+        else if(strcmp(buffer, "base") == 0)
         {
-            strcpy(buffer, "ack coach\0");
-            coach = client_socket[i];
+            strcpy(buffer, "ack base\0");
+            base = client_socket[i];
             send(sd, buffer, strlen(buffer), 0 );
         }
         //Check if it's a message from a player
@@ -205,11 +205,11 @@ int socket_in_out(int i){
             }
 
             if(count>5){
-            send(coach, player, strlen(player), 0 );
+            send(base, player, strlen(player), 0 );
             }
 
             if(b>=12){
-            send(coach, player, strlen(player), 0 );
+            send(base, player, strlen(player), 0 );
             }
 
             strcpy(buffer, "forwarded\0");
@@ -310,7 +310,7 @@ int comms(char *message){
 int main(int argc , char *argv[])
 {
     //Message that is sent to new connections.
-    char *message = "Connected to pi.\r\n";         //maybe add number for which pi
+    char *message = "Connected to router.\r\n";         //maybe add number for which pi
     int e = 0;          //for error checking
 
     e = setup();
