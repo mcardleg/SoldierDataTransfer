@@ -10,31 +10,28 @@
 #define PORT 8080
 #define SA struct sockaddr
 
-void player_tell(int sockfd)
-{
+void soldier_tell(int sock){
     char buff[MAX];
     int n;
     bzero(buff, sizeof(buff));
-    printf("Telling server this is a player.\n");
-    strcpy(buff, "player\0");
-    write(sockfd, buff, sizeof(buff));
+    printf("Telling server this is a soldier.\n");
+    strcpy(buff, "soldier\0");
+    write(sock, buff, sizeof(buff));
     bzero(buff, sizeof(buff));
-    read(sockfd, buff, sizeof(buff));
+    read(sock, buff, sizeof(buff));
     printf("From Server: %s\n", buff);
 }
 
-void func(int sockfd)
-{
+void func(int sock){
     char buff[MAX];
     int n;
     for (;;) {
         bzero(buff, sizeof(buff));
-        printf("Enter the string : ");
         n = 0;
         while ((buff[n++] = getchar()) != '\n');
-        write(sockfd, buff, sizeof(buff));
+        write(sock, buff, sizeof(buff));
         bzero(buff, sizeof(buff));
-        read(sockfd, buff, sizeof(buff));
+        read(sock, buff, sizeof(buff));
         printf("From Server: %s\n", buff);
         if ((strncmp(buff, "exit", 4)) == 0) {                  //fix exit
             printf("Client Exit...\n");
@@ -43,19 +40,17 @@ void func(int sockfd)
     }
 }
 
-int main()
-{
-    int sockfd, connfd;
+int main(){
+    int sock, connfd;
     struct sockaddr_in servaddr, cli;
 
     // socket create and verification
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == -1) {
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == -1) {
         printf("socket creation failed...\n");
         exit(0);
     }
-    else
-        printf("Socket successfully created..\n");
+    else printf("Socket successfully created..\n");
     bzero(&servaddr, sizeof(servaddr));
 
     // assign IP, PORT
@@ -64,7 +59,7 @@ int main()
     servaddr.sin_port = htons(PORT);
 
     // connect the client socket to server socket
-    if (connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0) {
+    if (connect(sock, (SA*)&servaddr, sizeof(servaddr)) != 0) {
         printf("connection with the server failed...\n");
         exit(0);
     }
@@ -72,11 +67,11 @@ int main()
         printf("connected to the server..\n");
 
     // tell server this is a player
-    player_tell(sockfd);
+    soldier_tell(sock);
 
     // function for chat
-    func(sockfd);
+    func(sock);
 
     // close the socket
-    close(sockfd);
+    close(sock);
 }
