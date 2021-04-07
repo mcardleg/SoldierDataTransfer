@@ -1,5 +1,3 @@
-//Example code: A simple server side code, which echos back the received message.
-//Handle multiple socket connections with select and fd_set on Linux
 #include <stdio.h>
 #include <string.h>   //strlen
 #include <stdlib.h>
@@ -12,11 +10,10 @@
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
 #include<time.h>
 #define MAX 80
-
-
 #define TRUE   1
 #define FALSE  0
-#define PORT 8080	//THIS IS THE ONLY DIFFERENCE BETWEEN EACH PI FILE
+#define PORT 8080
+#define NUM_SOLDIERS 10
 
 //globals
 int count;
@@ -24,7 +21,7 @@ int count0, count1, count2, count3, count4, count5;
 int hb_array[1000][5];
 int impact_array[1000][5];
 int opt;
-int master_socket, addrlen, new_socket, client_socket[7], max_clients, clients, player_check[7], activity, i, valread, sd, base;
+int master_socket, addrlen, new_socket, client_socket[NUM_SOLDIERS+1], max_clients, clients, soldier_check[NUM_SOLDIERS+1], activity, i, valread, curr_sock, base;
 int max_sd;
 struct sockaddr_in address;
 char buffer[1025];  //data buffer of 1K
@@ -39,7 +36,7 @@ void delay(int seconds)
 
     while (clock() < start_time + milli_seconds);
 }
-
+/*
 void storage(int i, int hr, int impact){
     switch(i-1) {
         case 0: hb_array[count0][i]=hr;
@@ -67,7 +64,7 @@ void storage(int i, int hr, int impact){
             count5++;
             break;
     }
-}
+}	*/
 
 int setup(){
     opt = TRUE;
@@ -80,7 +77,7 @@ int setup(){
     for (i = 0; i < max_clients; i++)
     {
         client_socket[i] = 0;              //initialise all client_socket[] to 0 so not checked
-        player_check[i] = 0;               //initialize all sockets to not player.
+        soldier_check[i] = 0;               //initialize all sockets to not player.
     }
 
     //create a master socket
@@ -125,27 +122,27 @@ int setup(){
 }
 
 int socket_in_out(int i){
-    sd = client_socket[i];
+    curr_sock = client_socket[i];
 
-    if (FD_ISSET( sd, &readfds))
+    if (FD_ISSET( curr_sock, &readfds))
     {
         //Check if it was for closing , and also read the
         //incoming message
-        if ((valread = read( sd, buffer, 1024)) == 0)
+        if ((valread = read( curr_sock, buffer, 1024)) == 0)
         {
             //Somebody disconnected , get his details and print
-            getpeername(sd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+            getpeername(curr_sock, (struct sockaddr*)&address, (socklen_t*)&addrlen);
             printf("Host disconnected , ip %s , port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
 
             //Close the socket and mark as 0 in list for reuse
-            close( sd );
+            close( curr_sock );
             client_socket[i] = 0;
         }
         //If incoming message says "exit", echo it back.
         else if ((strncmp(buffer, "exit", 4)) == 0) {
             printf("Client Exit...\n");
             buffer[valread] = '\0';
-            send(sd , buffer , strlen(buffer) , 0 );
+            send(curr_sock , buffer , strlen(buffer) , 0 );
             q--;
             if(q=0){
             send(base, buffer, strlen(buffer), 0);
@@ -155,8 +152,8 @@ int socket_in_out(int i){
         else if(strcmp(buffer, "soldier") == 0)
         {
             strcpy(buffer, "ack soldier\0");
-            player_check[i] = 1;                    //track player sockets
-            send(sd, buffer, strlen(buffer), 0 );
+            soldier_check[i] = 1;                    //track player sockets
+            send(curr_sock, buffer, strlen(buffer), 0 );
             q++;
         }
         //Check if the socket is a coach
@@ -164,10 +161,10 @@ int socket_in_out(int i){
         {
             strcpy(buffer, "ack base\0");
             base = client_socket[i];
-            send(sd, buffer, strlen(buffer), 0 );
+            send(curr_sock, buffer, strlen(buffer), 0 );
         }
         //Check if it's a message from a player
-        else if(player_check[i] == 1)
+        else if(soldier_check[i] == 1)
         {
 
             char str1[15];
@@ -213,14 +210,14 @@ int socket_in_out(int i){
             }
 
             strcpy(buffer, "forwarded\0");
-            send(sd, buffer, strlen(buffer), 0 );
-            storage(i, a, b);
+            send(curr_sock, buffer, strlen(buffer), 0 );
+            //storage(i, a, b);
         }
         //If it's not a player, its a coach requesting data.
         else
         {
             strcpy(buffer, "ack request\0");
-            send(sd, buffer, strlen(buffer), 0 );
+            send(curr_sock, buffer, strlen(buffer), 0 );
         }
     }
     return 1;
@@ -238,18 +235,16 @@ int comms(char *message){
     max_sd = master_socket;
 
     //add child sockets to set
-    for ( i = 0 ; i < max_clients ; i++)
-    {
-        //socket descriptor
-        sd = client_socket[i];
+    for ( i = 0 ; i < max_clients ; i++){
+        curr_sock = client_socket[i];
 
-        //if valid socket descriptor then add to read list
-        if(sd > 0)
-            FD_SET( sd , &readfds);
+        //if current socket descriptor is valid, add to read list
+        if(curr_sock > 0)
+            FD_SET( curr_sock , &readfds);
 
         //highest file descriptor number, need it for the select function
-        if(sd > max_sd)
-            max_sd = sd;
+        if(curr_sock > max_sd)
+            max_sd = curr_sock;
         }
 
     //wait for an activity on one of the sockets , timeout is NULL ,
@@ -257,10 +252,8 @@ int comms(char *message){
     activity = select( max_sd + 1 , &readfds , NULL , NULL , NULL);
 
     if ((activity < 0) && (errno!=EINTR))
-    {
         printf("select error");
-    }
-
+    
     //If something happened on the master socket, then its an incoming connection
     if (FD_ISSET(master_socket, &readfds))
     {
