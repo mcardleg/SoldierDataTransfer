@@ -16,7 +16,6 @@ void setupString(char* output);
 
 const int id = 12345;
 
-
 void soldier_tell(int sock){
     char buff[MAX];
     int n;
@@ -33,10 +32,6 @@ void func(int sock){
     char buff[MAX];
     int n;
     for (;;) {
-		buff = setupString(buff);
-		buff = randomData(buff);
-		setupString(*buff);
-		randomData(*buff);
 		setupString(buff);
 		randomData(buff);
         write(sock, buff, sizeof(buff));
