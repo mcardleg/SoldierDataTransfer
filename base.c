@@ -65,6 +65,7 @@ int func(int socket) {          //send requests for data periodically
 void func(int sock){
     char buff[MAX];
     int n;
+    printf("Press 'Q' in terminal to Exit\n");
     for (;;) {
         bzero(buff, sizeof(buff));
         read(sock, buff, sizeof(buff));
@@ -113,10 +114,12 @@ void func(int sock){
         
         printf("From router: %s\n", buff);	//prints out id, heartrate and imapct to base 						  terminal
         
-        if ((strncmp(buff, "exit", 4)) == 0) {	//fix exit
-            printf("Client Exit...\n");
-            break;
-        }
+	scanf("%s", buff);
+        if (strcmp(buff, "Q") == 0) {
+		printf("Mission Complete, Exiting...\n");
+		write(sock, "Q", sizeof(buff));
+		break;
+	}
     }
 }
 
