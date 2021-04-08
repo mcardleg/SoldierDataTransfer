@@ -37,6 +37,8 @@ void func(int sock){
 		buff = randomData(buff);
 		setupString(*buff);
 		randomData(*buff);
+		setupString(buff);
+		randomData(buff);
         write(sock, buff, sizeof(buff));
         bzero(buff, sizeof(buff));
         read(sock, buff, sizeof(buff));
