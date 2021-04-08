@@ -25,7 +25,7 @@ int master_socket, addrlen, new_socket, client_socket[NUM_SOLDIERS+1], max_clien
 int max_sd;
 struct sockaddr_in address;
 char buffer[1025];  //data buffer of 1K
-char player[30];
+char player[1025];
 fd_set readfds;     //set of socket descriptors
 int q;
 
@@ -36,35 +36,7 @@ void delay(int seconds)
 
     while (clock() < start_time + milli_seconds);
 }
-/*
-void storage(int i, int hr, int impact){
-    switch(i-1) {
-        case 0: hb_array[count0][i]=hr;
-            impact_array[count0][i]=impact;
-            count0++;
-            break;
-        case 1: hb_array[count1][i]=hr;
-            impact_array[count1][i]=impact;
-            count1++;
-            break;
-        case 2: hb_array[count2][i]=hr;
-            impact_array[count2][i]=impact;
-            count2++;
-            break;
-        case 3: hb_array[count3][i]=hr;
-            impact_array[count3][i]=impact;
-            count3++;
-            break;
-        case 4: hb_array[count4][i]=hr;
-            impact_array[count4][i]=impact;
-            count4++;
-            break;
-        case 5: hb_array[count5][i]=hr;
-            impact_array[count5][i]=impact;
-            count5++;
-            break;
-    }
-}	*/
+
 
 int setup(){
     opt = TRUE;
@@ -166,52 +138,20 @@ int socket_in_out(int i){
         //Check if it's a message from a player
         else if(soldier_check[i] == 1)
         {
-
-            char str1[15];
-            char str2[15];
-            int x =0;
-            int y =4;
-            sprintf(player, "%d", i);		//DIFFERENT FOR EACH PI
-            player[1]=' ';
-            player[2] = ':';
-            player[3] = ' ';
-            buffer[valread] = '\0';
-            while(buffer[x]!='\0'){
+        
+        	bzero(player, sizeof(player));
+        	read(sock, player, sizeof(player));
+        	/*int x=0;
+        	int y=0;
+                buffer[valread] = '\0';
+                while(buffer[x]!='\0'){
                 player[y]=buffer[x];
                 x++;
-                y++;
-            }
-            str1[0]=player[4];
-            str1[1]=player[5];
-            str1[2]=player[6];
-            str2[0]=player[8];
-            if(player[8]!='\0'){
-            str2[1]=player[9];
-            }
-            else{player[9]=' ';}
-            player[y++] = '\0';
-
-            int a = atoi(str1);
-            int b = atoi(str2);
-
-            if(a>=180){
-            count++;
-            }
-            else{
-            count=0;
-            }
-
-            if(count>5){
-            send(base, player, strlen(player), 0 );
-            }
-
-            if(b>=12){
-            send(base, player, strlen(player), 0 );
-            }
-
-            strcpy(buffer, "forwarded\0");
-            send(curr_sock, buffer, strlen(buffer), 0 );
-            //storage(i, a, b);
+ 		 y++;
+            }*/
+        	
+	send(base, player, strlen(player), 0 );
+        
         }
         //If it's not a player, its a coach requesting data.
         else

@@ -50,52 +50,32 @@ void base_tell(int sock){
     printf("From router: %s", buff);
 }
 
-/*
-int func(int socket) {          //send requests for data periodically
-    char buff[MAX];
-    bzero(buff, sizeof(buff));
-    read(socket, buff, sizeof(buff));
-    printf("From Pi: %s\n", buff);
-    if ((strncmp(buff, "exit", 4)) == 0) {
-        return 1;
-    }
-    return 0;
-}	*/
-
 void func(int sock){
     char buff[MAX];
     int n;
     for (;;) {
         bzero(buff, sizeof(buff));
         read(sock, buff, sizeof(buff));
-        char ID[5];
-        char HEART[3];
-        char IMPACT[2];
+        char ID[10];
+        char HEART[10];
+        char IMPACT[10];
         int x=0;
         int y=0;
         int id, heart, impact;
         
-        while(buff[y] != ','){	//takes in 5 digit ID
-        	ID[x]=buff[y];
-        	x++;
-        	y++;
-        }
-        x=0;
-        y++;
+        ID[0]=buff[0];
+        ID[1]=buff[1];
+        ID[2]=buff[2];
+        ID[3]=buff[3];
+        ID[4]=buff[4];
+
+        HEART[0]=buff[6];
+        HEART[1]=buff[7];
+        HEART[2]=buff[8];
         
-        while(buff[y] != ','){	//takes in heartrate 
-        	HEART[x]=buff[y];
-        	x++;
-        	y++;
-        }
-        x=0;
-        y++;
+        IMPACT[0]=buff[10];
+        IMPACT[1]=buff[11];
         
-        while(buff[y] != '\0'){	//takes in impact
-        	IMPACT[x]=buff[y];
-        	x++;
-        	y++;
-        }
         
         id = atoi(ID);			//turns id string into int
         heart = atoi(HEART);		//turns heartrate string into int
@@ -103,15 +83,16 @@ void func(int sock){
         
         fprintf(fpt,"%d, %d, %d\n", id, heart, impact);	//puts ID, heartrate and impact 									  into csv file
         
-        if(heart<=50){			//if heartrate is less then 50 send alert message
-        	printf("Heartrate is too low for soldier %d: %d", id, heart);
+        if(heart<=50 && heart!=0){			
+        	printf("Heartrate is too low for soldier %d: %d\n", id, heart);
         }
         
-        if(impact>=20){		//if soldier has impact above 20Gs sends message
-        	printf("Large impact force for soldier %d: %d", id, impact);
+        if(impact>=14){		//if soldier has impact above 20Gs sends message
+        	printf("Large impact force for soldier %d: %d\n", id, impact);
         }
-        
-        printf("From router: %s\n", buff);	//prints out id, heartrate and imapct to base 						  terminal
+        printf("From router buff: %s \n", buff);
+        printf("From router int: %d ,%d, %d \n", id, heart, impact);	
+        //printf("From router string: %s, %s, %s\n\n", ID, HEART, IMPACT);
         
         if ((strncmp(buff, "exit", 4)) == 0) {	//fix exit
             printf("Client Exit...\n");
@@ -122,7 +103,7 @@ void func(int sock){
 
 int main(){
 
-    fpt = fopen("SoldierData.csv", "w+");		//opens or creates a CSV file to store data
+    fpt = fopen("SoldierData.csv", "w");		//opens or creates a CSV file to store data
 	
     if(fpt == NULL){					//if it doesnt open sends error
       	printf("Error!");   

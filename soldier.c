@@ -31,12 +31,14 @@ void func(int sock){
     char buff[MAX];
     int n;
     for (;;) {
+    	bzero(buff, sizeof(buff));
 	setupString(buff);
 	randomData(buff);
         write(sock, buff, sizeof(buff));
-        bzero(buff, sizeof(buff));
+        printf("Data being sent: %s\n", buff);
+        /*bzero(buff, sizeof(buff));
         read(sock, buff, sizeof(buff));
-        printf("From Server: %s\n", buff);
+        printf("From Server: %s\n", buff);*/
        
     }
 }
