@@ -53,6 +53,7 @@ void base_tell(int sock){
 void func(int sock){
     char buff[MAX];
     int n;
+    printf("Press 'Q' in terminal to Exit\n");
     for (;;) {
         bzero(buff, sizeof(buff));
         read(sock, buff, sizeof(buff));
@@ -94,10 +95,12 @@ void func(int sock){
         printf("From router int: %d ,%d, %d \n", id, heart, impact);	
         //printf("From router string: %s, %s, %s\n\n", ID, HEART, IMPACT);
         
-        if ((strncmp(buff, "exit", 4)) == 0) {	//fix exit
-            printf("Client Exit...\n");
-            break;
-        }
+	scanf("%s", buff);
+        if (strcmp(buff, "Q") == 0) {
+		printf("Mission Complete, Exiting...\n");
+		write(sock, "Q", sizeof(buff));
+		break;
+	}
     }
 }
 
