@@ -14,6 +14,8 @@
 void randomData(char* output);
 void setupString(char* output);
 
+const int id = 12345;
+
 
 void soldier_tell(int sock){
     char buff[MAX];
