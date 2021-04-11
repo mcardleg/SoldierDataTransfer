@@ -50,10 +50,10 @@ int main(){
     // socket create and verification
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
-        printf("socket creation failed...\n");
+        printf("Socket creation failed.\n");
         exit(0);
     }
-    else printf("Socket successfully created..\n");
+    else printf("Socket successfully created.\n");
     bzero(&servaddr, sizeof(servaddr));
 
     // assign IP, PORT
@@ -63,20 +63,15 @@ int main(){
 
     // connect the client socket to server socket
     if (connect(sock, (SA*)&servaddr, sizeof(servaddr)) != 0) {
-        printf("connection with the server failed...\n");
+        printf("Connection with the router failed.\n");
         exit(0);
     }
     else
-        printf("connected to the server..\n");
+        printf("Connected to the router.\n");
 
-    // tell server this is a player
-    soldier_tell(sock);
-
-    // function for chat
-    io(sock);
-
-    // close the socket
-    close(sock);
+    soldier_tell(sock);		// tell server this is a soldier
+    io(sock);			// function for transmission and retrieval
+    close(sock);		// close the socket
 }
 
 void randomData(char* output) {

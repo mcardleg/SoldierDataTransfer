@@ -24,8 +24,7 @@ char buffer[1025];  //data buffer of 1K
 char soldier[30];
 fd_set readfds;     //set of socket descriptors
 
-void delay(int seconds)
-{
+void delay(int seconds){
     int milli_seconds = 1000 * seconds;
     clock_t start_time = clock();
 
@@ -35,22 +34,19 @@ void delay(int seconds)
 int setup(){
     opt = TRUE;
 
-    for (i = 0; i < NUM_SOLDIERS+1; i++)
-    {
+    for (i = 0; i < NUM_SOLDIERS+1; i++){
         client_socket[i] = 0;              //initialise all client_socket[] to 0 so not checked
-        soldier_check[i] = 0;               //initialize all sockets to not player.
+        soldier_check[i] = 0;              //initialize all sockets to not player.
     }
 
     //create a master socket
-    if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0)
-    {
+    if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0){
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
 
     //set master socket to allow multiple connections ,
-    if( setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )
-    {
+    if( setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 ){
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
@@ -61,16 +57,14 @@ int setup(){
     address.sin_port = htons( PORT );
 
     //bind the socket to localhost port 8080
-    if (bind(master_socket, (struct sockaddr *)&address, sizeof(address))<0)
-    {
+    if (bind(master_socket, (struct sockaddr *)&address, sizeof(address))<0){
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
     printf("Listener on port %d \n", PORT);
 
     //try to specify maximum of 3 pending connections for the master socket
-    if (listen(master_socket, 3) < 0)
-    {
+    if (listen(master_socket, 3) < 0){
         perror("listen");
         exit(EXIT_FAILURE);
     }
@@ -88,45 +82,35 @@ int socket_in_out(int i){
     if (FD_ISSET( curr_sock, &readfds)){
     
         //Check if it was for closing, and also read the incoming message
-        if ((valread = read( curr_sock, buffer, 1024)) == 0)
-        {
+        if ((valread = read( curr_sock, buffer, 1024)) == 0){
             //Somebody disconnected, get his details and print
             getpeername(curr_sock, (struct sockaddr*)&address, (socklen_t*)&addrlen);
             printf("Host disconnected , ip %s , port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
 
             //Close the socket and mark as 0 in list for reuse
-            close( curr_sock );
+            close(curr_sock);
             client_socket[i] = 0;
         }
         //If incoming message says "exit", echo it back.
         else if ((strncmp(buffer, "Q", 4)) == 0) {
-            printf("Mission Complete, Exiting...\n");
+            printf("Mission Complete, Exiting.\n");
             buffer[valread] = '\0';
-            send(curr_sock , buffer , strlen(buffer) , 0 )
-            send(base, buffer, strlen(buffer), 0);
-            send(base, buffer, strlen(buffer), 0);
+            send(curr_sock, buffer, strlen(buffer), 0);
         }
         //Check if the socket is a soldier
-        else if(strcmp(buffer, "soldier") == 0)
-        {
+        else if(strcmp(buffer, "soldier") == 0){
             strcpy(buffer, "ack soldier\0");
             soldier_check[i] = 1;                    //track soldier sockets
             send(curr_sock, buffer, strlen(buffer), 0 );
         }
         //Check if the socket is the base
-        else if(strcmp(buffer, "base") == 0)
-        {
+        else if(strcmp(buffer, "base") == 0){
             strcpy(buffer, "ack base\0");
             base = client_socket[i];
             send(curr_sock, buffer, strlen(buffer), 0 );
         }
         //Check if it's a message from a soldier
         else if (soldier_check[i] == 1){
-        	sprintf(soldier, "%d", i);
-        	soldier[1] = ':';
-        	soldier[2] = ' ';
-        	soldier[3] = '\0';
-        	send(base, soldier, strlen(soldier), 0);
         	buffer[valread] = '\0';
         	send(base, buffer, strlen(buffer), 0);
         	strcpy(buffer, "forwarded\0");
@@ -141,40 +125,26 @@ int socket_in_out(int i){
     return 1;
 }
 
-int comms(char *message){
-    int e;          //for error handling
-    //clear the socket set
-    FD_ZERO(&readfds);
-
-    //add master socket to set
-    FD_SET(master_socket, &readfds);
+int io(char *message){
+    FD_ZERO(&readfds);					//clear the socket set
+    FD_SET(master_socket, &readfds);    		//add master socket to set
     max_sock = master_socket;
 
     //add child sockets to set
     for ( i = 0 ; i < NUM_SOLDIERS+1; i++){
         curr_sock = client_socket[i];
+        if(curr_sock > 0) {FD_SET( curr_sock , &readfds);} 	//if current socket descriptor is valid, add to read list
+        if(curr_sock > max_sock) {max_sock = curr_sock;}	//highest file descriptor number, need it for the select function
+    }
 
-        //if current socket descriptor is valid, add to read list
-        if(curr_sock > 0)
-            FD_SET( curr_sock , &readfds);
-
-        //highest file descriptor number, need it for the select function
-        if(curr_sock > max_sock)
-            max_sock = curr_sock;
-        }
-
-    //wait for an activity on one of the sockets , timeout is NULL ,
-    //so wait indefinitely
+    //wait for an activity on one of the sockets, timeout is NULL, so wait indefinitely
     activity = select(max_sock+1, &readfds, NULL, NULL, NULL);
-
-    if ((activity < 0) && (errno!=EINTR))
-        printf("select error");
+    
+    if ((activity < 0) && (errno!=EINTR)) {printf("select error");}
     
     //If something happened on the master socket, then its an incoming connection
-    if (FD_ISSET(master_socket, &readfds))
-    {
-        if ((new_socket = accept(master_socket,(struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
-        {
+    if (FD_ISSET(master_socket, &readfds)){
+        if ((new_socket = accept(master_socket,(struct sockaddr *)&address, (socklen_t*)&addrlen))<0){
         	perror("accept");
         	exit(EXIT_FAILURE);
         }
@@ -183,10 +153,7 @@ int comms(char *message){
         printf("New connection , socket fd is %d , ip is : %s , port : %d\n", new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
 
         //send new connection greeting message
-        if( send(new_socket, message, strlen(message), 0) != strlen(message) ){
-            perror("send");
-        }
-
+        if(send(new_socket, message, strlen(message), 0) != strlen(message)) {perror("send");}
         puts("Welcome message sent successfully");
 
         //add new socket to array of sockets
@@ -203,36 +170,18 @@ int comms(char *message){
 
     //else its some IO operation on some other socket
     for (i = 0; i < NUM_SOLDIERS+1; i++){
-        e = socket_in_out(i);
-        if(!e){
-        //DO SOME ERROR HANDLING HERE
-        }
-        e = 0;          //reset
+        socket_in_out(i);
     }
     delay(250);
     return 1;
 }
 
-int main(int argc , char *argv[])
-{
+int main(int argc , char *argv[]){
     //Message that is sent to new connections.
-    char *message = "Connected to router.\r\n";         //maybe add number for which pi
-    int e = 0;          //for error checking
+    char *message = "Connected to router.\r\n";
+    setup();
 
-    e = setup();
-    if (!e){
-    // DO SOME ERROR HANDLING HERE
-    }
-    e = 0;          //reset
-
-    while(TRUE)
-    {
-        e = comms(message);
-        if (!e){
-        //DO SOME ERROR HANDLING HERE
-        }
-        e = 0;      //reset
-    }
+    while(TRUE){io(message);}
 
     return 0;
 }
