@@ -6,14 +6,13 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <time.h>
-
 #define MAX 80
 #define PORT 8080
 #define SA struct sockaddr
 
 void randomData(char* output);
 void setupString(char* output);
-const int id = 12345;
+int id;
 
 void delay(int seconds){
     int milli_seconds = 1000 * seconds;
@@ -45,7 +44,6 @@ void io(int sock){
         printf("Data being sent: %s\n", buff);
         /*bzero(buff, sizeof(buff));
         read(sock, buff, sizeof(buff));
-
         printf("From Server: %s\n", buff);*/
         delay(200);
     }
@@ -77,6 +75,8 @@ int main(){
     else
         printf("Connected to the router.\n");
 
+    printf("Please enter the soldier's five digit ID number.\n");
+    scanf("%d",&id);
     soldier_tell(sock);		// tell server this is a soldier
     io(sock);			// function for transmission and retrieval
     close(sock);		// close the socket
