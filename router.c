@@ -84,7 +84,7 @@ int socket_in_out(int i){
             close(curr_sock);
             client_socket[i] = 0;
         }
-        //If incoming message says "exit", echo it back.
+       //If incoming message says "exit", echo it back.
         else if ((strncmp(buffer, "Q", 4)) == 0) {
             printf("Mission Complete, Exiting.\n");
             buffer[valread] = '\0';
