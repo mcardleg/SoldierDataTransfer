@@ -27,7 +27,7 @@ void soldier_tell(int sock){
     printf("From Server: %s\n", buff);
 }
 
-void func(int sock){
+void io(int sock){
     char buff[MAX];
     int n;
     for (;;) {
@@ -38,14 +38,14 @@ void func(int sock){
         printf("Data being sent: %s\n", buff);
         /*bzero(buff, sizeof(buff));
         read(sock, buff, sizeof(buff));
+
         printf("From Server: %s\n", buff);*/
-       
     }
 }
 
 int main(){
-    int sock, connfd;
-    struct sockaddr_in servaddr, cli;
+    int sock;
+    struct sockaddr_in servaddr;
 
     // socket create and verification
     sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -73,7 +73,7 @@ int main(){
     soldier_tell(sock);
 
     // function for chat
-    func(sock);
+    io(sock);
 
     // close the socket
     close(sock);
