@@ -6,6 +6,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/select.h>
+
 #define MAX 80
 #define PORT 8080
 #define SA struct sockaddr
@@ -52,7 +54,12 @@ void base_tell(int sock){
 
 void io(int sock){
     char buff[MAX];
+    char game[MAX];
     int n;
+    
+    fd_set fds;
+    struct timeval tv = {.tv_sec=0,.tv_usec=0};
+    
     printf("Press 'Q' in terminal to Exit\n");
     for (;;) {
         bzero(buff, sizeof(buff));
@@ -96,15 +103,23 @@ void io(int sock){
         	printf("Large impact force for soldier %d: %d\n", id, impact);
         }
         printf("From router buff: %s \n", buff);
-        printf("From router int: %d ,%d, %d \n", id, heart, impact);
+        //printf("From router int: %d ,%d, %d \n", id, heart, impact);
         //printf("From router string: %s, %s, %s\n\n", ID, HEART, IMPACT);
-
-	//scanf("%s", buff);
-        if (strcmp(buff, "Q") == 0) {
-		printf("Mission Complete, Exiting...\n");
-		write(sock, "Q", sizeof(char));
-		break;
+	
+	//terms for select function
+	FD_ZERO(&fds);	
+	FD_SET(0,&fds);
+	
+	//if there is an input 
+	if(select(1,&fds,NULL,NULL,&tv)){
+		scanf("%s", game);	//read in input
+        	if (strcmp(game, "Q") == 0) {	//if 'Q', exit
+			printf("Mission Complete, Exiting...\n");
+			write(sock, game, sizeof(game));
+			break;
+		}	
 	}
+	
     }
 }
 
@@ -125,6 +140,9 @@ int main(){
 
     return 0;
 }
+
+
+
 
 
 
