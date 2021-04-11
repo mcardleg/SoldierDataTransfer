@@ -24,13 +24,6 @@ char buffer[1025];  //data buffer of 1K
 char soldier[30];
 fd_set readfds;     //set of socket descriptors
 
-void delay(int seconds){
-    int milli_seconds = 1000 * seconds;
-    clock_t start_time = clock();
-
-    while (clock() < start_time + milli_seconds);
-}
-
 int setup(){
     opt = TRUE;
 
@@ -80,7 +73,7 @@ int socket_in_out(int i){
     curr_sock = client_socket[i];
 
     if (FD_ISSET( curr_sock, &readfds)){
-    
+
         //Check if it was for closing, and also read the incoming message
         if ((valread = read( curr_sock, buffer, 1024)) == 0){
             //Somebody disconnected, get his details and print
@@ -113,6 +106,7 @@ int socket_in_out(int i){
         else if (soldier_check[i] == 1){
         	buffer[valread] = '\0';
         	send(base, buffer, strlen(buffer), 0);
+        	printf("%s\n", buffer);
         	strcpy(buffer, "forwarded\0");
         	send(curr_sock, buffer, strlen(buffer), 0);
         }
@@ -139,9 +133,9 @@ int io(char *message){
 
     //wait for an activity on one of the sockets, timeout is NULL, so wait indefinitely
     activity = select(max_sock+1, &readfds, NULL, NULL, NULL);
-    
+
     if ((activity < 0) && (errno!=EINTR)) {printf("select error");}
-    
+
     //If something happened on the master socket, then its an incoming connection
     if (FD_ISSET(master_socket, &readfds)){
         if ((new_socket = accept(master_socket,(struct sockaddr *)&address, (socklen_t*)&addrlen))<0){
@@ -158,7 +152,7 @@ int io(char *message){
 
         //add new socket to array of sockets
         for (i = 0; i < NUM_SOLDIERS+1; i++){
-            
+
             //if position is empty
             if( client_socket[i] == 0 ){
                 client_socket[i] = new_socket;
@@ -172,7 +166,6 @@ int io(char *message){
     for (i = 0; i < NUM_SOLDIERS+1; i++){
         socket_in_out(i);
     }
-    delay(250);
     return 1;
 }
 

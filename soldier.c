@@ -15,6 +15,13 @@ void randomData(char* output);
 void setupString(char* output);
 const int id = 12345;
 
+void delay(int seconds){
+    int milli_seconds = 1000 * seconds;
+    clock_t start_time = clock();
+
+    while (clock() < start_time + milli_seconds);
+}
+
 void soldier_tell(int sock){
     char buff[MAX];
     int n;
@@ -40,6 +47,7 @@ void io(int sock){
         read(sock, buff, sizeof(buff));
 
         printf("From Server: %s\n", buff);*/
+        delay(200);
     }
 }
 

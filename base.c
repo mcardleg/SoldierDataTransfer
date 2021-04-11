@@ -102,7 +102,7 @@ void io(int sock){
 	scanf("%s", buff);
         if (strcmp(buff, "Q") == 0) {
 		printf("Mission Complete, Exiting...\n");
-		write(sock, "Q", sizeof(buff));
+		write(sock, "Q", sizeof(char));
 		break;
 	}
     }
