@@ -99,10 +99,11 @@ int socket_in_out(int i){
             client_socket[i] = 0;
         }
         //If incoming message says "exit", echo it back.
-        else if ((strncmp(buffer, "exit", 4)) == 0) {
-            printf("Client Exit...\n");
+        else if ((strncmp(buffer, "Q", 4)) == 0) {
+            printf("Mission Complete, Exiting...\n");
             buffer[valread] = '\0';
-            send(curr_sock , buffer , strlen(buffer) , 0 );
+            send(curr_sock , buffer , strlen(buffer) , 0 )
+            send(base, buffer, strlen(buffer), 0);
             send(base, buffer, strlen(buffer), 0);
         }
         //Check if the socket is a soldier
@@ -130,7 +131,6 @@ int socket_in_out(int i){
         	send(base, buffer, strlen(buffer), 0);
         	strcpy(buffer, "forwarded\0");
         	send(curr_sock, buffer, strlen(buffer), 0);
-        	
         }
         //If it's not a soldier, its the base requesting data.
         else {

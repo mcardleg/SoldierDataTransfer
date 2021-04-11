@@ -12,6 +12,7 @@
 
 int sock;
 struct sockaddr_in servaddr;
+FILE *fpt;
 
 void setup(){
     // create socket
@@ -49,9 +50,11 @@ void base_tell(int sock){
     printf("From router: %s", buff);
 }
 
+
 void io(int sock){
     char buff[MAX];
     int n;
+    printf("Press 'Q' in terminal to Exit\n");
     for (;;) {
         bzero(buff, sizeof(buff));
         read(sock, buff, sizeof(buff));
@@ -60,17 +63,89 @@ void io(int sock){
             printf("Base Exit.\n");
             break;
         }
+        char ID[10];
+        char HEART[10];
+        char IMPACT[10];
+        int x=0;
+        int y=0;
+        int id, heart, impact;
+        
+        ID[0]=buff[0];
+        ID[1]=buff[1];
+        ID[2]=buff[2];
+        ID[3]=buff[3];
+        ID[4]=buff[4];
+
+        HEART[0]=buff[6];
+        HEART[1]=buff[7];
+        HEART[2]=buff[8];
+        
+        IMPACT[0]=buff[10];
+        IMPACT[1]=buff[11];
+        
+        
+        id = atoi(ID);			//turns id string into int
+        heart = atoi(HEART);		//turns heartrate string into int
+        impact = atoi(IMPACT);	//turns impact string into int
+        
+        fprintf(fpt,"%d, %d, %d\n", id, heart, impact);	//puts ID, heartrate and impact 									  into csv file
+        
+        if(heart<=50 && heart!=0){			
+        	printf("Heartrate is too low for soldier %d: %d\n", id, heart);
+        }
+        
+        if(impact>=14){		//if soldier has impact above 20Gs sends message
+        	printf("Large impact force for soldier %d: %d\n", id, impact);
+        }
+        printf("From router buff: %s \n", buff);
+        printf("From router int: %d ,%d, %d \n", id, heart, impact);	
+        //printf("From router string: %s, %s, %s\n\n", ID, HEART, IMPACT);
+        
+	scanf("%s", buff);
+        if (strcmp(buff, "Q") == 0) {
+		printf("Mission Complete, Exiting...\n");
+		write(sock, "Q", sizeof(buff));
+		break;
+	}
     }
 }
 
 int main(){
 
+    fpt = fopen("SoldierData.csv", "w");		//opens or creates a CSV file to store data
+	
+    if(fpt == NULL){					//if it doesnt open sends error
+      	printf("Error!");   
+      	exit(1);             
+    }
+    
+    fprintf(fpt,"ID, Heartrate, Impact\n");		//puts headers in  CSV file
+
+	
     setup();
     // tell server this is a coach
     base_tell(sock);
 
     // function for transmission and retrieval
+
     io(sock);
+    
+    fclose(fpt);
 
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

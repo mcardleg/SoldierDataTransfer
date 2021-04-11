@@ -6,9 +6,14 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <time.h>
+
 #define MAX 80
 #define PORT 8080
 #define SA struct sockaddr
+
+void randomData(char* output);
+void setupString(char* output);
+const int id = 12345;
 
 void soldier_tell(int sock){
     char buff[MAX];
@@ -26,17 +31,15 @@ void io(int sock){
     char buff[MAX];
     int n;
     for (;;) {
-        bzero(buff, sizeof(buff));
-        n = 0;
-        while ((buff[n++] = getchar()) != '\n');
+    	bzero(buff, sizeof(buff));
+	setupString(buff);
+	randomData(buff);
         write(sock, buff, sizeof(buff));
-        bzero(buff, sizeof(buff));
+        printf("Data being sent: %s\n", buff);
+        /*bzero(buff, sizeof(buff));
         read(sock, buff, sizeof(buff));
-        printf("From Server: %s\n", buff);
-        if ((strncmp(buff, "exit", 4)) == 0) {                  //fix exit
-            printf("Soldier Exit...\n");
-            break;
-        }
+
+        printf("From Server: %s\n", buff);*/
     }
 }
 
@@ -75,3 +78,28 @@ int main(){
     // close the socket
     close(sock);
 }
+
+void randomData(char* output) {
+	time_t t;
+	char buffer[6];
+	int heart, impact;
+	heart = rand() % 100 + 100;
+	impact = rand() % 21;
+	output[6] = '0' + heart / 100;
+	output[7] = '0' + (heart % 100) / 10;
+	output[8] = '0' + heart % 10;
+	output[9] = ',';
+	output[10] = '0' + impact / 10;
+	output[11] = '0' + impact % 10;
+	output[12] = ';';
+}
+
+void setupString(char* output) {
+	output[0] = '0' + id / 10000;
+	output[1] = '0' + (id % 10000) / 1000;
+	output[2] = '0' + (id % 1000) / 100;
+	output[3] = '0' + (id % 100) / 10;
+	output[4] = '0' + (id % 10);
+	output[5] = ',';
+}
+
