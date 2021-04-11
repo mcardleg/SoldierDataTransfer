@@ -85,10 +85,9 @@ int socket_in_out(int i){
             client_socket[i] = 0;
         }
        //If incoming message says "exit", echo it back.
-        else if ((strncmp(buffer, "Q", 4)) == 0) {
+       else if ((strncmp(buffer, "Q", 4)) == 0) {
             printf("Mission Complete, Exiting.\n");
-            buffer[valread] = '\0';
-            send(curr_sock, buffer, strlen(buffer), 0);
+            exit(-1);
         }
         //Check if the socket is a soldier
         else if(strcmp(buffer, "soldier") == 0){
