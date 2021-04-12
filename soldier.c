@@ -1,11 +1,11 @@
-#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <time.h>
+#include <arpa/inet.h>      //inet_addr()
+                                //includes sys/socket.h - SOCK_STREAM, AF_INET(), socket()
+                                //includes netinet/in.h - sin_family, sin_port, sin_addr, sockaddr_in, htons()
+#include <unistd.h>         //read(), close(), write()
+#include <time.h>           //clock_t, clock()
 #define MAX 80
 #define PORT 8080
 #define SA struct sockaddr
@@ -17,7 +17,6 @@ int id;
 void delay(int seconds){
     int milli_seconds = 1000 * seconds;
     clock_t start_time = clock();
-
     while (clock() < start_time + milli_seconds);
 }
 
@@ -38,6 +37,7 @@ void io(int sock){
     int n;
     for (;;) {
     	bzero(buff, sizeof(buff));
+<<<<<<< Updated upstream
 	setupString(buff);
 	randomData(buff);
         write(sock, buff, sizeof(buff));
@@ -46,15 +46,32 @@ void io(int sock){
         read(sock, buff, sizeof(buff));
         printf("From Server: %s\n", buff);*/
         delay(200);
+=======
+		setupString(buff);				//setup output
+		randomData(buff);				//random values
+
+        write(sock, buff, sizeof(buff));//wite to router
+        printf("Data being sent: %s\n", buff);
+        bzero(buff, sizeof(buff));		//clear buffer
+        read(sock, buff, sizeof(buff));	//read from router
+        printf("From Server: %s\n", buff);
+
+        //if empty string sent from router, transmission over, exit
+        if(strcmp(buff,"")==0){
+        	printf("Mission Complete, Exiting...\n");
+        	exit(-1);
+        }
+        delay(1000);
+>>>>>>> Stashed changes
     }
 }
 
 int main(){
     int sock;
-    struct sockaddr_in servaddr;
+    struct sockaddr_in servaddr;        //struct which stores internet addresses
 
-    // socket create and verification
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+    //socket() creates a socket and returns a file descriptor that can be used in later function calls that operate on sockets
+    sock = socket(AF_INET, SOCK_STREAM, 0);     //AF_INET  => IP4 address type, SOCK_STREAM => TCP socket type, 0 => unspecified default protocol
     if (sock == -1) {
         printf("Socket creation failed.\n");
         exit(0);
@@ -63,12 +80,12 @@ int main(){
     bzero(&servaddr, sizeof(servaddr));
 
     // assign IP, PORT
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_family = AF_INET;              //AF_INET => IP4 address type
+    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");     //inet_addr() converts a string of IP4 address to an int for use as an internet address
+    servaddr.sin_port = htons(PORT);           //htons translates a short integer from host byte order to network byte order
 
     // connect the client socket to server socket
-    if (connect(sock, (SA*)&servaddr, sizeof(servaddr)) != 0) {
+    if (connect(sock, (SA*)&servaddr, sizeof(servaddr)) != 0) {         //int connect(int socket, const struct sockaddr *address, socklen_t address_len);
         printf("Connection with the router failed.\n");
         exit(0);
     }
@@ -83,11 +100,22 @@ int main(){
 }
 
 void randomData(char* output) {
+<<<<<<< Updated upstream
 	time_t t;
 	char buffer[6];
 	int heart, impact;
 	heart = rand() % 100 + 100;
 	impact = rand() % 21;
+=======
+	//generate random values for soldier
+
+	int heart, impact;
+
+	heart = rand() % 100 + 100; 	//heartrate between 100 and 200BPM
+	impact = rand() % 21;			//impact rating between 0 and 20
+
+	//format output string
+>>>>>>> Stashed changes
 	output[6] = '0' + heart / 100;
 	output[7] = '0' + (heart % 100) / 10;
 	output[8] = '0' + heart % 10;
