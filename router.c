@@ -1,12 +1,15 @@
 #include <stdio.h>
-#include <string.h>         //strlen
+#include <string.h>   //strlen
 #include <stdlib.h>
-#include <errno.h>          //errno, perror()
-#include <unistd.h>         //read(), close()
-#include <sys/time.h>       //FD_SET, FD_ISSET, FD_ZERO, select()
-#include <arpa/inet.h>      //inet_ntoa()
-                                //includes sys/socket.h - SOCK_STREAM, setsockopt(), SO_REUSEADDR, AF_INET(), accept(), bind(), getpeername(), listen(), send(), socket()
-                                //includes netinet/in.h - sin_family, sin_port, sin_addr, sockaddr_in, INNADDR_ANY, htons(), ntohs()
+#include <errno.h>
+#include <unistd.h>   //close
+#include <arpa/inet.h>    //close
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
+#include<time.h>
+#include<stdbool.h>
 #define MAX 80
 #define TRUE   1
 #define FALSE  0
@@ -17,67 +20,89 @@
 int opt, addrlen, activity, valread;
 int client_socket[NUM_SOLDIERS+1], soldier_check[NUM_SOLDIERS+1], i, base;
 int master_socket, max_sock, new_socket, curr_sock;
-struct sockaddr_in address;                                                     //struct which stores internet addresses
-char buffer[1025];                                                              //data buffer of 1K
-char soldier[30];                                                               //data buffer for passing on soldier's message
-fd_set socket_set;                                                              //set of socket descriptors
+struct sockaddr_in address;
+char buffer[1025];  //data buffer of 1K
+char soldier[30];
+char temp[30];
+fd_set readfds;     //set of socket descriptors
+int timing = 5;
+clock_t time_last;
+clock_t timeout_start;
+int count = 0;
+char ID[6][5];
+char tempID[30];
+bool reconnect = FALSE;
 
 int setup(){
     opt = TRUE;
 
     for (i = 0; i < NUM_SOLDIERS+1; i++){
-        client_socket[i] = 0;                           //initialise all client_socket[] to 0 so not checked
-        soldier_check[i] = 0;                           //initialize all sockets to not player.
+        client_socket[i] = 0;              //initialise all client_socket[] to 0 so not checked
+        soldier_check[i] = 0;              //initialize all sockets to not player.
     }
 
-    //socket() creates a socket and returns a file descriptor that can be used in later function calls that operate on sockets
-    if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0){              //AF_INET  => IP4 address type, SOCK_STREAM => TCP socket type, 0 => unspecified default protocol
+    //create a master socket
+    if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0){
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
 
-    //setsockopt() changes socket settings, SOL_SOCKET specifies that it's changing settings at the socket level, SO_REUSEADDR allows reuse of local addresses
-    if( setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 ){   //int setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len);
+    //set master socket to allow multiple connections ,
+    if( setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 ){
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
 
     //type of socket created
-    address.sin_family = AF_INET;                       //AF_INET => IP4 address type
-    address.sin_addr.s_addr = INADDR_ANY;               //INADDR_ANY allows connection to any active port
-    address.sin_port = htons( PORT );                   //htons translates a short integer from host byte order to network byte order
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons( PORT );
 
-    //bind() assigns an address to an unnamed socket
-    if (bind(master_socket, (struct sockaddr *)&address, sizeof(address))<0){       //argument 1 - socket descriptor, argument 2 - struct holding the address to be bound
+    //bind the socket to localhost port 8080
+    if (bind(master_socket, (struct sockaddr *)&address, sizeof(address))<0){
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
     printf("Listener on port %d \n", PORT);
 
-    if (listen(master_socket, 3) < 0){                  //listen() changes the socket mode to accept connections, argument 2 sets the length of the socket's listen queue
+    //try to specify maximum of 3 pending connections for the master socket
+    if (listen(master_socket, 3) < 0){
         perror("listen");
         exit(EXIT_FAILURE);
     }
 
+    //accept the incoming connection
     addrlen = sizeof(address);
     puts("Waiting for connections ...");
 
     return 1;
 }
 
-int socket_in_out(int i){
+void socket_in_out(int i){
     curr_sock = client_socket[i];
 
-    if (FD_ISSET(curr_sock, &socket_set)){              //Returns a non-zero value if the bit for curr_sock is set in socket_set, and 0 otherwise.
+    if (FD_ISSET( curr_sock, &readfds)){
+        //Check if it was for closing, and also read the incoming message
+        if ((valread = read( curr_sock, buffer, 1024)) == 0)
+        {
+            if(time_last/CLOCKS_PER_SEC + timing < clock()/CLOCKS_PER_SEC && reconnect == FALSE) {   
+                //Somebody disconnected , get his details and print
+                getpeername(curr_sock, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+                printf("Host timed out , ip %s , port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
 
-        //Read the message
-        //If the length of the message is zero, the client has disconnected
-        if ((valread = read( curr_sock, buffer, 1024)) == 0){
-            getpeername(curr_sock, (struct sockaddr*)&address, (socklen_t*)&addrlen);                                   //getpeername() stores the address & address length of curr_sock in a sockaddr struct
-            printf("Host disconnected , ip %s , port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));     //inet_ntoa() converts an internet host address into a string in internet standard dot notation
-                                                                                                                        //ntohs() converts from network byte order to host byte order.
-            close(curr_sock);                           //Close the socket and mark as 0 in list for reuse
-            client_socket[i] = 0;                       //Mark as 0 in array for reuse
+                //Close the socket and mark as 0 in list for reuse
+                close( curr_sock );
+                client_socket[i] = 0;
+            }
+            else if(time_last/CLOCKS_PER_SEC + timing < clock()/CLOCKS_PER_SEC && reconnect == TRUE) {   
+                getpeername(curr_sock, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+                close( curr_sock );
+                client_socket[i] = 0;
+                reconnect = FALSE;
+            }
+            else {
+                read( curr_sock, buffer, 1024);
+            }
         }
        //If incoming message says "exit", echo it back.
        else if ((strncmp(buffer, "Q", 4)) == 0) {
@@ -85,24 +110,40 @@ int socket_in_out(int i){
             exit(-1);
         }
         //Check if the socket is a soldier
-        else if(strcmp(buffer, "soldier") == 0){
-            strcpy(buffer, "ack soldier\0");
-            soldier_check[i] = 1;                       //Track which sockets have soldiers
+        else if(strncmp(buffer, "Soldier", 7) == 0){
+            bzero(temp, 30);
+            bzero(tempID, 5);
+            strcpy(temp , buffer);
+            sprintf(buffer, "ack %s", temp);
+            printf("Connected to %s\n", temp);
+            strncpy(tempID, &temp[8], 5);
+            for(int i = 0; i <= count; i++) {
+                if(strcmp(tempID, ID[i]) == 0) {
+                    reconnect = TRUE;
+                }
+            }
+            strncpy(ID[count], &temp[8], 5);
+            printf("ID = %s\n", ID[count]);
+            count++;
+            soldier_check[i] = 1;                    //track soldier sockets
             send(curr_sock, buffer, strlen(buffer), 0 );
+            time_last = clock();
         }
         //Check if the socket is the base
         else if(strcmp(buffer, "base") == 0){
             strcpy(buffer, "ack base\0");
-            base = client_socket[i];                    //Track which socket has the base
+            base = client_socket[i];
             send(curr_sock, buffer, strlen(buffer), 0 );
+            time_last = clock();
         }
         //Check if it's a message from a soldier
         else if (soldier_check[i] == 1){
         	buffer[valread] = '\0';
         	send(base, buffer, strlen(buffer), 0);
-        	printf("%s\n", buffer);
+        	//printf("%s\n", buffer);
         	strcpy(buffer, "forwarded\0");
         	send(curr_sock, buffer, strlen(buffer), 0);
+            time_last = clock();
         }
         //If it's not a soldier, its the base requesting data.
         else {
@@ -110,30 +151,30 @@ int socket_in_out(int i){
             send(curr_sock, buffer, strlen(buffer), 0);
         }
     }
-    return 1;
 }
 
 int io(char *message){
-    FD_ZERO(&socket_set);					//clear the socket set
-    FD_SET(master_socket, &socket_set);    		//add master socket to set
+    FD_ZERO(&readfds);					//clear the socket set
+    FD_SET(master_socket, &readfds);    		//add master socket to set
     max_sock = master_socket;
 
     //add child sockets to set
     for ( i = 0 ; i < NUM_SOLDIERS+1; i++){
         curr_sock = client_socket[i];
-        if(curr_sock > 0) {FD_SET( curr_sock , &socket_set);} 	//if current socket descriptor is valid, add to read list
+        if(curr_sock > 0) {FD_SET( curr_sock , &readfds);} 	//if current socket descriptor is valid, add to read list
         if(curr_sock > max_sock) {max_sock = curr_sock;}	//highest file descriptor number, need it for the select function
     }
 
     //wait for an activity on one of the sockets, timeout is NULL, so wait indefinitely
-    activity = select(max_sock+1, &socket_set, NULL, NULL, NULL);
+    activity = select(max_sock+1, &readfds, NULL, NULL, NULL);
 
     if ((activity < 0) && (errno!=EINTR)) {printf("select error");}
 
     //If something happened on the master socket, then its an incoming connection
-    if (FD_ISSET(master_socket, &socket_set)){
+    if (FD_ISSET(master_socket, &readfds)){
         if ((new_socket = accept(master_socket,(struct sockaddr *)&address, (socklen_t*)&addrlen))<0){
         	perror("accept");
+            printf("hello\n");
         	exit(EXIT_FAILURE);
         }
 
@@ -168,7 +209,9 @@ int main(int argc , char *argv[]){
     char *message = "Connected to router.\r\n";
     setup();
 
-    while(TRUE){io(message);}
-
+    while(TRUE) {
+        io(message);
+    }
+    printf("hello\n");
     return 0;
 }
