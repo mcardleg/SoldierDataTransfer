@@ -1,17 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-<<<<<<< Updated upstream
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <time.h>
-=======
 #include <unistd.h>             //read(), close(), write()
 #include <arpa/inet.h>          //inet_addr()
                                     //includes sys/socket.h - SOCK_STREAM, AF_INET(), socket(), connect()
                                     //includes netinet/in.h - sin_family, sin_port, sin_addr, sockaddr_in, htons()
->>>>>>> Stashed changes
+#include <sys/select.h>
 #define MAX 80
 #define PORT 8080
 #define SA struct sockaddr
@@ -58,17 +52,13 @@ void base_tell(int sock){
 }
 
 void io(int sock){
-<<<<<<< Updated upstream
-    char buff[MAX];
-    int n;
-=======
     char buff[MAX], game[MAX], ID[10], HEART[10], IMPACT[10];
     int n, x, y, id, heart, impact;
 
+    fd_set fds;
     struct timeval tv = {.tv_sec=0,.tv_usec=0};
-
->>>>>>> Stashed changes
     printf("Press 'Q' in terminal to Exit\n");
+  
     for (;;) {
         bzero(buff, sizeof(buff));
         read(sock, buff, sizeof(buff));
@@ -107,17 +97,16 @@ void io(int sock){
         	printf("Large impact force for soldier %d: %d\n", id, impact);
         }
         printf("From router buff: %s \n", buff);
-        printf("From router int: %d ,%d, %d \n", id, heart, impact);
+        //printf("From router int: %d ,%d, %d \n", id, heart, impact);
         //printf("From router string: %s, %s, %s\n\n", ID, HEART, IMPACT);
 
-<<<<<<< Updated upstream
 	//scanf("%s", buff);
         if (strcmp(buff, "Q") == 0) {
 		printf("Mission Complete, Exiting...\n");
 		write(sock, "Q", sizeof(char));
 		break;
 	}
-=======
+
 	FD_ZERO(&fds);      //Initializes all file descriptors in the set to have zero bits
 	FD_SET(0,&fds);     //Sets the bit for the file descriptor fd in the file descriptor set fdset.
 
@@ -134,7 +123,6 @@ void io(int sock){
 		}
 	}
 
->>>>>>> Stashed changes
     }
 }
 
@@ -155,7 +143,6 @@ int main(){
 
     return 0;
 }
-
 
 
 

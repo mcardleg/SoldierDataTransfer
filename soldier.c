@@ -37,32 +37,20 @@ void io(int sock){
     int n;
     for (;;) {
     	bzero(buff, sizeof(buff));
-<<<<<<< Updated upstream
-	setupString(buff);
-	randomData(buff);
+	setupString(buff);				//setup output
+	randomData(buff);         //random values
         write(sock, buff, sizeof(buff));
         printf("Data being sent: %s\n", buff);
         /*bzero(buff, sizeof(buff));
         read(sock, buff, sizeof(buff));
         printf("From Server: %s\n", buff);*/
         delay(200);
-=======
-		setupString(buff);				//setup output
-		randomData(buff);				//random values
-
-        write(sock, buff, sizeof(buff));//wite to router
-        printf("Data being sent: %s\n", buff);
-        bzero(buff, sizeof(buff));		//clear buffer
-        read(sock, buff, sizeof(buff));	//read from router
-        printf("From Server: %s\n", buff);
-
+      
         //if empty string sent from router, transmission over, exit
         if(strcmp(buff,"")==0){
         	printf("Mission Complete, Exiting...\n");
         	exit(-1);
         }
-        delay(1000);
->>>>>>> Stashed changes
     }
 }
 
@@ -99,23 +87,12 @@ int main(){
     close(sock);		// close the socket
 }
 
-void randomData(char* output) {
-<<<<<<< Updated upstream
-	time_t t;
-	char buffer[6];
-	int heart, impact;
-	heart = rand() % 100 + 100;
-	impact = rand() % 21;
-=======
-	//generate random values for soldier
+void randomData(char* output) {       //generate random values for soldier
 
 	int heart, impact;
-
 	heart = rand() % 100 + 100; 	//heartrate between 100 and 200BPM
 	impact = rand() % 21;			//impact rating between 0 and 20
 
-	//format output string
->>>>>>> Stashed changes
 	output[6] = '0' + heart / 100;
 	output[7] = '0' + (heart % 100) / 10;
 	output[8] = '0' + heart % 10;
@@ -126,6 +103,7 @@ void randomData(char* output) {
 }
 
 void setupString(char* output) {
+	//initialise output with soldier ID
 	output[0] = '0' + id / 10000;
 	output[1] = '0' + (id % 10000) / 1000;
 	output[2] = '0' + (id % 1000) / 100;
@@ -133,4 +111,3 @@ void setupString(char* output) {
 	output[4] = '0' + (id % 10);
 	output[5] = ',';
 }
-
