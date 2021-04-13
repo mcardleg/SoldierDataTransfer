@@ -32,10 +32,10 @@ int count = 0;
 char ID[6][5];
 char tempID[30];
 bool reconnect = FALSE;
+float time1[6];
 
 int setup(){
     opt = TRUE;
-
     for (i = 0; i < NUM_SOLDIERS+1; i++){
         client_socket[i] = 0;              //initialise all client_socket[] to 0 so not checked
         soldier_check[i] = 0;              //initialize all sockets to not player.
@@ -85,20 +85,21 @@ void socket_in_out(int i){
         //Check if it was for closing, and also read the incoming message
         if ((valread = read( curr_sock, buffer, 1024)) == 0)
         {
-            if(time_last/CLOCKS_PER_SEC + timing < clock()/CLOCKS_PER_SEC && reconnect == FALSE) {   
+            if(time1[i]/CLOCKS_PER_SEC + timing < clock()/CLOCKS_PER_SEC && reconnect == FALSE) {   
                 //Somebody disconnected , get his details and print
                 getpeername(curr_sock, (struct sockaddr*)&address, (socklen_t*)&addrlen);
-                printf("Host timed out , ip %s , port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+                ID[i][5] = 0;
+                printf("Soldier %s timed out , ip %s , port %d \n", ID[i], inet_ntoa(address.sin_addr), ntohs(address.sin_port));
 
                 //Close the socket and mark as 0 in list for reuse
                 close( curr_sock );
                 client_socket[i] = 0;
             }
-            else if(reconnect == TRUE) {
+            /*else if(reconnect == TRUE) {
                 close( curr_sock ); 
                 client_socket[i] = 0;
                 reconnect = FALSE;
-            }
+            }*/
             else {
                 read( curr_sock, buffer, 1024);
             }
@@ -110,30 +111,28 @@ void socket_in_out(int i){
         }
         //Check if the socket is a soldier
         else if(strncmp(buffer, "Soldier", 7) == 0){
-            bzero(temp, 30);
-            bzero(tempID, 5);
             strcpy(temp , buffer);
             sprintf(buffer, "ack %s", temp);
             printf("Connected to %s\n", temp);
-            strncpy(tempID, &temp[8], 5);
+            /*strncpy(tempID, &temp[8], 5);
             for(int i = 0; i <= count; i++) {
                 if(strcmp(tempID, ID[i]) == 0) {
                     reconnect = TRUE;
                 }
-            }
-            strncpy(ID[count], &temp[8], 5);
-            printf("ID = %s\n", ID[count]);
+            }*/
+            strncpy(ID[i], &temp[8], 5);
+            printf("ID = %s\n", ID[i]);
             count++;
             soldier_check[i] = 1;                    //track soldier sockets
             send(curr_sock, buffer, strlen(buffer), 0 );
-            time_last = clock();
+            time1[i] = clock();
         }
         //Check if the socket is the base
         else if(strcmp(buffer, "base") == 0){
             strcpy(buffer, "ack base\0");
             base = client_socket[i];
             send(curr_sock, buffer, strlen(buffer), 0 );
-            time_last = clock();
+            time1[i] = clock();
         }
         //Check if it's a message from a soldier
         else if (soldier_check[i] == 1){
@@ -142,7 +141,7 @@ void socket_in_out(int i){
         	//printf("%s\n", buffer);
         	strcpy(buffer, "forwarded\0");
         	send(curr_sock, buffer, strlen(buffer), 0);
-            time_last = clock();
+            time1[i] = clock();
         }
         //If it's not a soldier, its the base requesting data.
         else {
