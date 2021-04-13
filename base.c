@@ -90,8 +90,8 @@ void io(int sock){
         if(impact>=14){			//if soldier has impact above 20Gs sends message
         	printf("Large impact force for soldier %d: %d\n", id, impact);
         }
-        printf("From router buff: %s \n", buff);
-        printf("From router int: %d ,%d, %d \n", id, heart, impact);
+        printf("From router: %s \n", buff);
+        //printf("From router int: %d ,%d, %d \n", id, heart, impact);
         //printf("From router int: %d ,%d, %d \n", id, heart, impact);
         //printf("From router string: %s, %s, %s\n\n", ID, HEART, IMPACT);
 

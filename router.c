@@ -94,9 +94,8 @@ void socket_in_out(int i){
                 close( curr_sock );
                 client_socket[i] = 0;
             }
-            else if(time_last/CLOCKS_PER_SEC + timing < clock()/CLOCKS_PER_SEC && reconnect == TRUE) {   
-                getpeername(curr_sock, (struct sockaddr*)&address, (socklen_t*)&addrlen);
-                close( curr_sock );
+            else if(reconnect == TRUE) {
+                close( curr_sock ); 
                 client_socket[i] = 0;
                 reconnect = FALSE;
             }
